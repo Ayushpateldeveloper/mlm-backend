@@ -110,9 +110,9 @@ exports.loginUser = async (req, res) => {
     }
 
     try {
-        // Find user by email and select password field explicitly
+        // Find user by email and explicitly select password field
         const user = await User.findOne({ email }).select('+password');
-        
+
         // Check if user exists
         if (!user) {
             console.log(`No user found with email: ${email}`);
@@ -130,38 +130,19 @@ exports.loginUser = async (req, res) => {
         // Generate JWT token
         const token = generateToken(user);
 
-        // Respond with user info and token
+        // Respond with token and user info
         res.json({
             token,
             user: { id: user._id, username: user.username, email: user.email }
         });
     } catch (error) {
         console.error('Login error:', error);
-        res.status(500).json({ message: 'Server error during login', error: error.message });
-    }
-};
-
-        // Generate JWT token
-        const token = generateToken(user);
-
-        // Respond with token and user info
-        res.json({ 
-            token, 
-            user: { 
-                id: user._id, 
-                username: user.username, 
-                email: user.email 
-            } 
-        });
-    } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             message: 'Server error during login',
-            error: error.message 
+            error: error.message
         });
     }
 };
-
 // @desc    Get user profile
 // @route   GET /api/auth/profile
 // @access  Private
