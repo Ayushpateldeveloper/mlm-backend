@@ -99,45 +99,47 @@ exports.registerUser = async (req, res) => {
 // @route   POST /api/auth/login
 // @access  Public
 exports.loginUser = async (req, res) => {
+    const { email, password } = req.body;
+
+    console.log('Login attempt:', { email, passwordLength: password ? password.length : 'N/A' });
+
+    // Validate input
+    if (!email || !password) {
+        console.log('Missing email or password');
+        return res.status(400).json({ message: 'Please provide email and password', error: 'Incomplete credentials' });
+    }
+
     try {
-        const { email, password } = req.body;
-
-        console.log('Login attempt:', { 
-            email, 
-            passwordLength: password ? password.length : 'N/A' 
-        });
-
-        // Validate input
-        if (!email || !password) {
-            console.log('Missing email or password');
-            return res.status(400).json({ 
-                message: 'Please provide email and password',
-                error: 'Incomplete credentials' 
-            });
-        }
-
-        // Find user by email
+        // Find user by email and select password field explicitly
         const user = await User.findOne({ email }).select('+password');
         
         // Check if user exists
         if (!user) {
             console.log(`No user found with email: ${email}`);
-            return res.status(400).json({ 
-                message: 'Invalid credentials',
-                error: 'User not found' 
-            });
+            return res.status(400).json({ message: 'Invalid credentials', error: 'User not found' });
         }
 
         // Check password
-        const isMatch = await user.comparePassword(password);
-        
+        const isMatch = await bcrypt.compare(password, user.password);
+
         if (!isMatch) {
             console.log(`Password mismatch for email: ${email}`);
-            return res.status(400).json({ 
-                message: 'Invalid credentials',
-                error: 'Incorrect password' 
-            });
+            return res.status(400).json({ message: 'Invalid credentials', error: 'Incorrect password' });
         }
+
+        // Generate JWT token
+        const token = generateToken(user);
+
+        // Respond with user info and token
+        res.json({
+            token,
+            user: { id: user._id, username: user.username, email: user.email }
+        });
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ message: 'Server error during login', error: error.message });
+    }
+};
 
         // Generate JWT token
         const token = generateToken(user);
