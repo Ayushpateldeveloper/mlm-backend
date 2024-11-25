@@ -13,26 +13,31 @@ const app = express();
 // Flexible CORS configuration
 const corsOptions = {
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
+        // Log the incoming origin to help debug
+        console.log('Request Origin:', origin);
+
+        // Allowed origins including local and production environments
         const allowedOrigins = [
-            'http://localhost:3000', 
-            'https://mlm-frontend.vercel.app', 
-            process.env.FRONTEND_URL
+            'http://localhost:3000',  // Local development
+            'https://mlm-frontend-srrr.vercel.app', // Production frontend URL
+            process.env.FRONTEND_URL  // Environment variable for frontend URL
         ];
-        
+
+        // If no origin (like mobile or curl), or it's an allowed origin, proceed
         if (!origin || allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
+            console.error('CORS error: Not allowed by CORS', origin);
             callback(new Error('Not allowed by CORS'));
         }
     },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Methods allowed
+    allowedHeaders: ['Content-Type', 'Authorization'],   // Allowed headers
+    credentials: true // Allow cookies to be sent
 };
 
-app.use(cors(corsOptions));
-app.use(express.json());
+app.use(cors(corsOptions));  // Use the CORS configuration
+app.use(express.json());  // Parse incoming JSON requests
 
 // Connect to MongoDB
 connectDB().then(() => {
@@ -62,9 +67,10 @@ app.use((err, req, res, next) => {
     });
 });
 
+// Set port from environment or default to 5000
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
 
-module.exports = app; // Export for Vercel
+module.exports = app; // Export for deployment (e.g., Vercel)
